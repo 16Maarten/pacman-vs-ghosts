@@ -51,22 +51,28 @@ public class Executor {
 		Executor exec = new Executor();
 
 		// ----------- run multiple games in batch mode - good for testing. -----------
-		int numTrials = 100;
+		int numTrials = 100000;
 
-		// exec.runExperiment(new QLearningPacMan(0,0,0),new RandomGhosts(),numTrials);
+		// exec.runExperiment(new QLearningPacMan(0.9, 0.8, 0.9),new RandomGhosts(),numTrials);
 		// exec.runExperiment(new MyPacMan(),new RandomGhosts(),numTrials);
 		// exec.runExperiment(new RandomPacMan(),new RandomGhosts(),numTrials);
+		// RESULTAAT: (0.0, 0.0, 0.8) @ 100000 trials, 1935.9195 points
+		// RESULTAAT: (0.9, 0.8, 0.9) @ 100000 trials, 1845.4359 points
+		// RESULTAAT: (0.52, 0.95, 0.64) @ 100000 trials, 1962.0903 points
 
-		// BENCHMARK (0, 0, 0) & 10000 trails: 932.319 points
-		// RESULTAAT: (0.5, 0.7, 0.7) @ 10000 trials
-		// RESULTAAT: (0.5, 0.7, 0.7) @ 100 trials
-		exec.runExperimentQLearning(new RandomGhosts(), numTrials);
+		// BENCHMARK (0, 0, 0) @ 10000 trails: 932.319 points
+		// RESULTAAT: (0.0, 0.0, 0.8) @ 1000 trials, 1 decimal, 19:07 - 19:43:  1987 points
+		// RESULTAAT: (0.9, 0.8, 0.9) @ 100 trials, 1 decimal, 18:38 - 18:41: 2958 points
+		// RESULTAAT: (0.52, 0.95, 0.64) @ 10 trials, 2 decimal 14:10 - 18:28
+		// exec.runExperimentQLearning(new RandomGhosts(), numTrials);
 
-		// ----------- run a game in synchronous mode: game waits until controllers
-		// respond. -----------
-		// int delay=5;
-		// boolean visual=true;
+		// ----------- run a game in synchronous mode: game waits until controllers respond. -----------
+		int delay=5;
+		boolean visual=true;
 
+		// exec.runGame(new QLearningPacMan(0.9, 0.8, 0.9),new RandomGhosts(),visual,delay);
+		// exec.runGame(new QLearningPacMan(0.0, 0.0, 0.8),new RandomGhosts(),visual,delay);
+		// exec.runGame(new QLearningPacMan(0.52, 0.95, 0.64),new RandomGhosts(),visual,delay);
 		// exec.runGame(new QLearningPacMan(),new RandomGhosts(),visual,delay);
 		// exec.runGame(new MyPacMan(),new RandomGhosts(),visual,delay);
 		// exec.runGame(new RandomPacMan(),new RandomGhosts(),visual,delay);
@@ -139,7 +145,7 @@ public class Executor {
 	}
 
 	public void runExperimentQLearning(Controller<EnumMap<GHOST, MOVE>> ghostController, int trials) {
-		double highestScore = 0.0;
+		double highestAvgScore = 0.0;
 		double alpha = 0.0;
 		double gamma = 0.0;
 		double epsilon = 0.0;
@@ -148,14 +154,15 @@ public class Executor {
 		Game game;
 
 		System.out.println("Parameter calibration started...");
-		for (int x = 0; x < 101; x++) {
-			for (int y = 0; y < 101; y++) {
-				for (int z = 0; z < 101; z++) {
-					double avgScore = 0.0;
-					double alphaTemp = (double) x / 100;
-					double gammaTemp = (double) y / 100;
-					double epsilonTemp = (double) z / 100;
+		for (int x = 0; x < 11; x++) {
+			for (int y = 0; y < 11; y++) {
+				for (int z = 0; z < 11; z++) {
+					double summedScore = 0.0;
+					double alphaTemp = (double) x / 10;
+					double gammaTemp = (double) y / 10;
+					double epsilonTemp = (double) z / 10;
 					QLearningPacMan qLearningPacManController = new QLearningPacMan(alphaTemp, gammaTemp, epsilonTemp);
+					// System.out.print(String.format("CURRENT: ALPHA = %1.1f | GAMMA = %1.1f | EPSILON = %1.1f \r", alphaTemp, gammaTemp, epsilonTemp));
 
 					for (int i = 0; i < trials; i++) {
 						game = new Game(rnd.nextLong());
@@ -166,27 +173,26 @@ public class Executor {
 									ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
 						}
 
-						avgScore += game.getScore();
+						summedScore += game.getScore();
 					}
+					double avgScore = summedScore / trials;
 
-					if (avgScore > highestScore) {
-						highestScore = avgScore;
+					if (avgScore > highestAvgScore) {
+						highestAvgScore = avgScore;
 						alpha = alphaTemp;
 						gamma = gammaTemp;
 						epsilon = epsilonTemp;
-						// System.out.println(
-						// String.format("HIGHEST: ALPHA = %1.2f | GAMMA = %1.2f | EPSILON = %1.2f |
-						// %1.2f POINTS", alphaTemp, gammaTemp, epsilonTemp, highestScore));
+						// System.out.println(String.format("HIGHEST: ALPHA = %1.1f | GAMMA = %1.1f | EPSILON = %1.1f | %1.2f POINTS", alphaTemp, gammaTemp, epsilonTemp, highestAvgScore));
 					}
 				}
 
-				if (y != 100)
-					System.out.print(String.format("%% %d.%d \r", x, y/10));
+				if (x != 10 && y != 10 || x == 10 && y == 0)
+					System.out.print(String.format("%% %d%d \r", x, y));
 			}
 		}
 
-		System.out.println(String.format("----------RESULTS----------\nALPHA=%1.2f\nGAMMA=%1.2f\nEPSILON=%1.2f", alpha,
-				gamma, epsilon));
+		System.out.println(String.format("----------RESULTS----------\nALPHA=%1.1f\nGAMMA=%1.1f\nEPSILON=%1.1f\n%1.2f POINTS", alpha,
+				gamma, epsilon, highestAvgScore));
 	}
 
 	/**

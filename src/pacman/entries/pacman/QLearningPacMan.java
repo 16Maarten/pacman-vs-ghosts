@@ -7,6 +7,7 @@ import java.util.Random;
 import pacman.controllers.Controller;
 import pacman.game.Constants.*;
 import pacman.game.Game;
+import pacman.game.StateAction;
 
 public class QLearningPacMan extends Controller<MOVE> {
 	// Benchmark 0 0 0 with an average of
@@ -117,35 +118,6 @@ public class QLearningPacMan extends Controller<MOVE> {
 	private void setQValue(StateAction stateAction, double qValue) {
 		// Update the Q-value in the Q-table
 		qTable.put(stateAction, qValue);
-	}
-
-	private static class StateAction {
-		private final int state;
-		private final MOVE action;
-
-		public StateAction(int state, MOVE action) {
-			this.state = state;
-			this.action = action;
-		}
-
-		@Override
-		public int hashCode() {
-			// Override the hashCode method for using StateAction as a key in the Q-table
-			return state * 31 + action.ordinal();
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			// Override the equals method for comparing StateAction objects
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null || getClass() != obj.getClass()) {
-				return false;
-			}
-			StateAction other = (StateAction) obj;
-			return state == other.state && action == other.action;
-		}
 	}
 }
 /*

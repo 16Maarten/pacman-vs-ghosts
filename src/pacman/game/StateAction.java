@@ -1,9 +1,8 @@
 package pacman.game;
 
-import java.util.Objects;
 import pacman.game.Constants.MOVE;
 
-public final class StateAction {
+public class StateAction {
     private final int state;
     private final MOVE action;
 
@@ -15,7 +14,7 @@ public final class StateAction {
     @Override
     public int hashCode() {
         // Override the hashCode method for using StateAction as a key in the Q-table
-        return Objects.hash(state, action);
+        return state * 31 + action.ordinal();
     }
 
     @Override
