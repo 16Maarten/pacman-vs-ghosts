@@ -3,9 +3,12 @@ package pacman;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Random;
@@ -51,31 +54,47 @@ public class Executor {
 		Executor exec = new Executor();
 
 		// ----------- run multiple games in batch mode - good for testing. -----------
-		int numTrials = 100000;
+		int numTrials = 10000;
 
-		// exec.runExperiment(new QLearningPacMan(0.9, 0.8, 0.9),new RandomGhosts(),numTrials);
+		// RESULTAAT PRE GHOSTS: (0.3, 0.9, 0.5) @ 100000 trials, 1926.2458 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 20 minDistanceGhost, 7936,957 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 15 minDistanceGhost, 8633.337 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 10 minDistanceGhost, 9559.578 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 9 minDistanceGhost, 9810.081 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 8 minDistanceGhost, 9963.003 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 7 minDistanceGhost, 10063.210 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 6 minDistanceGhost, 10270.400 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 5 minDistanceGhost, 10394.791 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 4 minDistanceGhost, 2722.890 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 3 minDistanceGhost, 1910.818 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 2 minDistanceGhost, 1905.355 points
+		exec.runExperiment(new QLearningPacMan(0.3, 0.9, 0.5, 5),new
+		RandomGhosts(),numTrials);
 		// exec.runExperiment(new MyPacMan(),new RandomGhosts(),numTrials);
-		// exec.runExperiment(new RandomPacMan(),new RandomGhosts(),numTrials);
-		// RESULTAAT: (0.0, 0.0, 0.8) @ 100000 trials, 1935.9195 points
-		// RESULTAAT: (0.9, 0.8, 0.9) @ 100000 trials, 1845.4359 points
-		// RESULTAAT: (0.52, 0.95, 0.64) @ 100000 trials, 1962.0903 points
+		// exec.runExperiment(new RandomPacMan(), new RandomGhosts(), numTrials);
+		// exec.runExperiment(new StarterPacMan(), new RandomGhosts(), numTrials);
+		// exec.runExperiment(new NearestPillPacMan(), new RandomGhosts(), numTrials);
 
 		// BENCHMARK (0, 0, 0) @ 10000 trails: 932.319 points
-		// RESULTAAT: (0.0, 0.0, 0.8) @ 1000 trials, 1 decimal, 19:07 - 19:43:  1987 points
-		// RESULTAAT: (0.9, 0.8, 0.9) @ 100 trials, 1 decimal, 18:38 - 18:41: 2958 points
-		// RESULTAAT: (0.52, 0.95, 0.64) @ 10 trials, 2 decimal 14:10 - 18:28
-		// exec.runExperimentQLearning(new RandomGhosts(), numTrials);
+		// RESULTAAT: (0.3, 0.9, 0.5) @ 1000 trials, 1 decimal, 36m: 2064,18 POINTS
+		// RESULTAAT: (0.8, 0.9, 0.8) @ 100 trials, 1 decimal, 3m30s: 2181,10 points
+		// exec.runExperimentQLearning(new QLearningPacMan(), new RandomGhosts(), numTrials);
 
-		// ----------- run a game in synchronous mode: game waits until controllers respond. -----------
-		int delay=5;
-		boolean visual=true;
+		// ----------- run a game in synchronous mode: game waits until controllers
+		// respond. -----------
+		int delay = 5;
+		boolean visual = true;
 
-		// exec.runGame(new QLearningPacMan(0.9, 0.8, 0.9),new RandomGhosts(),visual,delay);
-		// exec.runGame(new QLearningPacMan(0.0, 0.0, 0.8),new RandomGhosts(),visual,delay);
-		// exec.runGame(new QLearningPacMan(0.52, 0.95, 0.64),new RandomGhosts(),visual,delay);
+		// exec.runGame(new QLearningPacMan(0.3, 0.9, 0.5),new
+		// RandomGhosts(),visual,delay);
+		// exec.runGame(new QLearningPacMan(0.0, 0.0, 0.8),new
+		// RandomGhosts(),visual,delay);
+		// exec.runGame(new QLearningPacMan(0.52, 0.95, 0.64),new
+		// RandomGhosts(),visual,delay);
 		// exec.runGame(new QLearningPacMan(),new RandomGhosts(),visual,delay);
 		// exec.runGame(new MyPacMan(),new RandomGhosts(),visual,delay);
 		// exec.runGame(new RandomPacMan(),new RandomGhosts(),visual,delay);
+		// exec.runGame(new StarterPacMan(),new RandomGhosts(),visual,delay);
 
 		// ----------- run the game in asynchronous mode. -----------
 		// boolean visual=true;
@@ -124,27 +143,39 @@ public class Executor {
 	 */
 	public void runExperiment(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController,
 			int trials) {
-		double avgScore = 0;
+		try {
+			double avgScore = 0;
+			FileWriter fw = new FileWriter(String.format("./results/results.%s.txt",
+					LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy.HH'u'mm'm'ss's'"))));
 
-		Random rnd = new Random(0);
-		Game game;
+			Random rnd = new Random(0);
+			Game game;
 
-		for (int i = 0; i < trials; i++) {
-			game = new Game(rnd.nextLong());
+			for (int i = 0; i < trials; i++) {
+				game = new Game(rnd.nextLong());
 
-			while (!game.gameOver()) {
-				game.advanceGame(pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
-						ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
+				while (!game.gameOver()) {
+					game.advanceGame(pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
+							ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
+				}
+
+				avgScore += game.getScore();
+
+				System.out.println(i + "\t" + game.getScore());
+				fw.write(game.getScore() + "\n");
 			}
 
-			avgScore += game.getScore();
-			System.out.println(i + "\t" + game.getScore());
+			System.out.println(avgScore / trials);
+			fw.write(avgScore / trials + "");
+			fw.close();
+		} catch (Exception e) {
+			e.getStackTrace();
+			System.out.println(e.getMessage());
 		}
-
-		System.out.println(avgScore / trials);
 	}
 
-	public void runExperimentQLearning(Controller<EnumMap<GHOST, MOVE>> ghostController, int trials) {
+	public void runExperimentQLearning(QLearningPacMan qLearningPacManController,
+			Controller<EnumMap<GHOST, MOVE>> ghostController, int trials) {
 		double highestAvgScore = 0.0;
 		double alpha = 0.0;
 		double gamma = 0.0;
@@ -161,8 +192,9 @@ public class Executor {
 					double alphaTemp = (double) x / 10;
 					double gammaTemp = (double) y / 10;
 					double epsilonTemp = (double) z / 10;
-					QLearningPacMan qLearningPacManController = new QLearningPacMan(alphaTemp, gammaTemp, epsilonTemp);
-					// System.out.print(String.format("CURRENT: ALPHA = %1.1f | GAMMA = %1.1f | EPSILON = %1.1f \r", alphaTemp, gammaTemp, epsilonTemp));
+					qLearningPacManController.setParameters(alphaTemp, gammaTemp, epsilonTemp);
+					// System.out.print(String.format("CURRENT: ALPHA = %1.1f | GAMMA = %1.1f |
+					// EPSILON = %1.1f \r", alphaTemp, gammaTemp, epsilonTemp));
 
 					for (int i = 0; i < trials; i++) {
 						game = new Game(rnd.nextLong());
@@ -182,7 +214,9 @@ public class Executor {
 						alpha = alphaTemp;
 						gamma = gammaTemp;
 						epsilon = epsilonTemp;
-						// System.out.println(String.format("HIGHEST: ALPHA = %1.1f | GAMMA = %1.1f | EPSILON = %1.1f | %1.2f POINTS", alphaTemp, gammaTemp, epsilonTemp, highestAvgScore));
+						// System.out.println(String.format("HIGHEST: ALPHA = %1.1f | GAMMA = %1.1f |
+						// EPSILON = %1.1f | %1.2f POINTS", alphaTemp, gammaTemp, epsilonTemp,
+						// highestAvgScore));
 					}
 				}
 
@@ -191,7 +225,8 @@ public class Executor {
 			}
 		}
 
-		System.out.println(String.format("----------RESULTS----------\nALPHA=%1.1f\nGAMMA=%1.1f\nEPSILON=%1.1f\n%1.2f POINTS", alpha,
+		System.out.println(String.format(
+				"----------RESULTS----------\nALPHA=%1.1f\nGAMMA=%1.1f\nEPSILON=%1.1f\n%1.2f POINTS", alpha,
 				gamma, epsilon, highestAvgScore));
 	}
 
@@ -440,6 +475,8 @@ public class Executor {
 
 				input = br.readLine();
 			}
+			
+            br.close();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
