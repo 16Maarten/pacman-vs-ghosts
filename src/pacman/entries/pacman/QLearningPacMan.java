@@ -1,5 +1,6 @@
 package pacman.entries.pacman;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -10,17 +11,17 @@ import pacman.game.Game;
 import pacman.game.StateAction;
 
 public class QLearningPacMan extends Controller<MOVE> {
-	// Benchmark 0 0 0 with an average of
-	// Set the learning rate (alpha) to control the weight given to new information
-	// compared to existing Q-values.
+	// Set the learning rate (alpha) to control the weight given to new information compared to existing Q-values.
 	private double alpha = 0.0; // No learning, no overwrite knowledge [0.0] <----------> [1.0] Full learning, full overwrite
+
 	// Set the discount factor (gamma) to balance immediate and future rewards. No
 	private double gamma = 0.0; // Immediate rewards [0.0] <----------> [1.0] Future rewards equally important
-	// Set the exploration rate (epsilon) to balance exploration and exploitation of
-	// the learned policy.
+
+	// Set the exploration rate (epsilon) to balance exploration and exploitation of the learned policy.
 	private double epsilon = 0.0; // No exploration, always exploit [0.0] <----------> [1.0] Full exploration, never exploit
+
 	// if a ghost is this close, run away
-	private int minDistanceGhost = 4;
+	private int minDistanceGhost = 20;
 
 	private Map<StateAction, Double> qTable;
 	private Random random;
@@ -38,7 +39,13 @@ public class QLearningPacMan extends Controller<MOVE> {
 		random = new Random();
 	}
 
-	public QLearningPacMan(double alpha, double gamma, double epsilon , int minDistanceGhost) {
+	public QLearningPacMan(int minDistanceGhost) {
+		this.minDistanceGhost = minDistanceGhost;
+		qTable = new HashMap<>();
+		random = new Random();
+	}
+
+	public QLearningPacMan(double alpha, double gamma, double epsilon, int minDistanceGhost) {
 		this.alpha = alpha;
 		this.gamma = gamma;
 		this.epsilon = epsilon;
@@ -55,16 +62,6 @@ public class QLearningPacMan extends Controller<MOVE> {
 
 		MOVE selectedMove = MOVE.NEUTRAL;
 		boolean ranFromGhost = false;
-
-		// If any non-edible ghost is too close (less than minDistanceGhost), run away
-		for (GHOST ghost : GHOST.values()) {
-			if (game.getGhostEdibleTime(ghost) == 0 && game.getGhostLairTime(ghost) == 0)
-				if (game.getShortestPathDistance(current, game.getGhostCurrentNodeIndex(ghost)) < minDistanceGhost) {
-					selectedMove = game.getNextMoveAwayFromTarget(game.getPacmanCurrentNodeIndex(),
-							game.getGhostCurrentNodeIndex(ghost), DM.PATH);
-					ranFromGhost = true;
-				}
-		}
 
 		// Explore or exploit, when not running from a ghost
 		if (!ranFromGhost) {
@@ -99,14 +96,154 @@ public class QLearningPacMan extends Controller<MOVE> {
 	}
 
 	private double calculateReward(Game previousState, Game newState) {
-		// Define the reward logic based on the game state changes
-		// You can customize this logic based on your game's specific requirements
-		// For example, you can assign positive rewards for eating pills or power pills,
-		// negative rewards for getting caught by ghosts, etc.
-		// Here's a simple reward logic based on the game score difference:
+		// Get the current positions of Pacman in the previous state and new state
+		int previousPosition = previousState.getPacmanCurrentNodeIndex();
+		int newPosition = newState.getPacmanCurrentNodeIndex();
+
+		// ---------------------REWARD--------------------- Run away from ghost reward
+		// Check if Pacman moved away from a non-edible ghost
+		double ghostReward = 0.0;
+		for (GHOST ghost : GHOST.values()) {
+			if (previousState.getGhostEdibleTime(ghost) == 0 &&
+					previousState.getGhostLairTime(ghost) == 0 && newState.getGhostEdibleTime(ghost) == 0 &&
+					newState.getGhostLairTime(ghost) == 0) {
+				if (previousState.getShortestPathDistance(previousPosition,
+						previousState.getGhostCurrentNodeIndex(ghost)) < minDistanceGhost) {
+					int previousDistance = previousState.getShortestPathDistance(previousPosition,
+							previousState.getGhostCurrentNodeIndex(ghost));
+					int newDistance = newState.getShortestPathDistance(newPosition,
+							newState.getGhostCurrentNodeIndex(ghost));
+					if (newDistance > previousDistance) {
+						ghostReward = 20.0;
+						break;
+					} else {
+						ghostReward = -20.0;
+						break;
+					}
+				}
+			}
+		}
+
+		// ---------------------REWARD--------------------- Move towards closest edible
+		// ghost
+		// Check if Pacman moved towards closest edible ghost
+		double movedToGhostReward = 0.0;
+		boolean edibleGhosts = false;
+		int minDistance = Integer.MAX_VALUE;
+		int newDistanceMinGhost = 0;
+
+		for (GHOST ghost : GHOST.values()) {
+			if (previousState.getGhostEdibleTime(ghost) > 0 && newState.getGhostEdibleTime(ghost) > 0) {
+				int previousDistance = previousState.getShortestPathDistance(previousPosition,
+						previousState.getGhostCurrentNodeIndex(ghost));
+
+				if (previousDistance < minDistance) {
+					minDistance = previousDistance;
+					newDistanceMinGhost = newState.getShortestPathDistance(newPosition,
+							newState.getGhostCurrentNodeIndex(ghost));
+					edibleGhosts = true;
+				}
+			}
+		}
+
+		if (edibleGhosts) {
+			if (newDistanceMinGhost < minDistance) {
+				movedToGhostReward = 10.0;
+			} else {
+				movedToGhostReward = -10.0;
+			}
+		}
+
+		// ---------------------REWARD--------------------- Move towards closest pill or
+		// powerpill
+		// Check if Pacman moved towards a pill or power pill
+		int[] pills = previousState.getPillIndices();
+		int[] powerPills = previousState.getPowerPillIndices();
+		ArrayList<Integer> targets = new ArrayList<>();
+
+		for (int i = 0; i < pills.length; i++) {
+			if (previousState.isPillStillAvailable(i)) {
+				targets.add(pills[i]);
+			}
+		}
+
+		for (int i = 0; i < powerPills.length; i++) {
+			if (previousState.isPowerPillStillAvailable(i)) {
+				targets.add(powerPills[i]);
+			}
+		}
+
+		int[] targetsArray = new int[targets.size()];
+
+		for (int i = 0; i < targetsArray.length; i++) {
+			targetsArray[i] = targets.get(i);
+		}
+
+		int closestTarget = previousState.getClosestNodeIndexFromNodeIndex(previousPosition,
+				targetsArray, DM.PATH);
+		int previousDistanceToTarget = previousState.getShortestPathDistance(previousPosition, closestTarget);
+		int newDistanceToTarget = newState.getShortestPathDistance(newPosition,
+				closestTarget);
+
+		double movedToClosestPillReward = newDistanceToTarget < previousDistanceToTarget ? 5.0 : -5.0;
+
+		// ---------------------REWARD--------------------- Pill eaten reward
+		// Get the pill indices of the previous state and new state
+		int[] previousPills = previousState.getPillIndices();
+		int[] newPills = newState.getPillIndices();
+
+		// Count the number of pills eaten
+		int pillsEaten = previousPills.length - newPills.length;
+
+		// Assign positive reward for each pill eaten
+		double pillEatenReward = pillsEaten * 7.5;
+
+		// ---------------------REWARD--------------------- Power pill eaten when ghost
+		// close reward
+		// Get the power pill indices of the previous state and new state
+		int[] previousPowerPills = previousState.getPowerPillIndices();
+		int[] newPowerPills = newState.getPowerPillIndices();
+
+		// Count the number of power pills eaten
+		boolean powerPillEaten = previousPowerPills.length - newPowerPills.length == 1;
+
+		// Check if any non-edible ghost is close (less than 10 nodes away)
+		int closeGhostsWhenPowerPill = 0;
+		if (powerPillEaten) {
+			for (GHOST ghost : GHOST.values()) {
+				if (newState.getGhostEdibleTime(ghost) > 0)
+					if (newState.getShortestPathDistance(newState.getPacmanCurrentNodeIndex(),
+							newState.getGhostCurrentNodeIndex(ghost)) < 10)
+						closeGhostsWhenPowerPill++;
+			}
+		}
+
+		// Assign positive reward for each power pill eaten
+		double powerPillCloseGhostReward = closeGhostsWhenPowerPill == 0 ? 0.0 : closeGhostsWhenPowerPill * 5.0;
+
+		// ---------------------REWARD--------------------- Empty position reward
+		// Check if Pacman moved to an empty position
+		boolean movedToEmptyPosition = (newState.getPillIndex(newPosition) == -1 &&
+				newState.getPowerPillIndex(newPosition) == -1);
+
+		// Assign a negative reward for moving to an empty position
+		double emptyPositionReward = movedToEmptyPosition ? -1.0 : 1.0;
+
+		// ---------------------REWARD--------------------- Score difference reward
+		// Calculate the score difference reward
 		int previousScore = previousState.getScore();
 		int newScore = newState.getScore();
-		return newScore - previousScore;
+		double scoreReward = newScore - previousScore;
+
+		// Calculate the overall reward as the sum of individual rewards
+		// double reward = ghostReward;
+		// double reward = movedToGhostReward;
+		// double reward = ghostReward + movedToGhostReward;
+		double reward = ghostReward + movedToGhostReward + movedToClosestPillReward + pillEatenReward
+				+ powerPillCloseGhostReward
+				+ emptyPositionReward + scoreReward;
+
+		return reward;
 	}
 
 	private MOVE getBestMove(int state, MOVE[] possibleMoves) {
@@ -157,86 +294,3 @@ public class QLearningPacMan extends Controller<MOVE> {
 		this.minDistanceGhost = minDistanceGhost;
 	}
 }
-/*
- * In this implementation, the Q-learning algorithm is integrated into the
- * `getMove()` method of the `QLearningPacMan` class. The Q-values are stored in
- * a `HashMap` called
- * `qTable`, and the class uses the `StateAction` class as a key to index the
- * Q-values in the table.
- * Please note that the code provided is a starting point and may need further
- * customization and tuning to fit your specific game environment and reward
- * logic.
- */
-
-// To implement a reinforcement learning algorithm for controlling Pac-Man based
-// on the given Java class, we'll use the Q-learning algorithm. Q-learning is a
-// model-free,
-// off-policy reinforcement learning algorithm that aims to learn an optimal
-// policy for an agent in a Markov Decision Process (MDP).
-
-// Here's a step-by-step guide on how to adapt the given class to work with
-// Q-learning:
-
-// 1. Define the state space:
-// - Identify the relevant information from the game state that can be used to
-// characterize the current state. For example, the positions of Pac-Man, the
-// ghosts,
-// the pills, and power pills could be important.
-// - Determine how to represent this state information in a suitable format for
-// the Q-learning algorithm, such as a feature vector or a hashable
-// representation.
-
-// 2. Define the action space:
-// - Identify the possible actions Pac-Man can take in the game, based on the
-// available moves defined in the class (`MOVE` enum).
-
-// 3. Initialize the Q-table:
-// - Create a lookup table (or data structure) to store the Q-values for each
-// state-action pair.
-// - Initialize the Q-values randomly or to some initial values.
-
-// 4. Define the learning parameters:
-// - Set the learning rate (alpha) to control the weight given to new
-// information compared to existing Q-values.
-// - Set the discount factor (gamma) to balance immediate and future rewards.
-// - Set the exploration rate (epsilon) to balance exploration and exploitation
-// of the learned policy.
-
-// 5. Update the `getMove` method:
-// - Replace the existing logic with the Q-learning algorithm.
-// - At each time step, observe the current state (based on the game state).
-// - Choose an action using an epsilon-greedy strategy:
-// - With probability (1 - epsilon), select the action with the highest Q-value
-// for the current state.
-// - With probability epsilon, select a random action to encourage exploration.
-// - Execute the chosen action in the game and observe the new state and the
-// resulting reward.
-// - Update the Q-value for the previous state-action pair using the Q-learning
-// update rule:
-// ```
-// Q(s, a) = (1 - alpha) * Q(s, a) + alpha * (r + gamma * max Q(s', a'))
-// ```
-// where:
-// - Q(s, a) is the Q-value for state s and action a.
-// - alpha is the learning rate.
-// - r is the observed reward after taking action a in state s.
-// - gamma is the discount factor.
-// - s' is the new state after taking action a.
-// - max Q(s', a') is the maximum Q-value for the new state s' over all possible
-// actions a'.
-
-// 6. Repeat steps 5 and 6 until the learning process is complete (e.g., a
-// certain number of iterations or convergence criteria are met).
-
-// 7. Use the learned Q-values to control Pac-Man:
-// - During gameplay, use the learned Q-values to select the best action based
-// on the current state.
-// - This can be done by choosing the action with the highest Q-value for the
-// current state.
-
-// Please note that implementing a complete reinforcement learning algorithm
-// goes beyond the scope of a simple response. It requires careful design,
-// training,
-// and integration with the game environment. The steps provided above serve as
-// a general guideline to adapt the given class to work with reinforcement
-// learning.

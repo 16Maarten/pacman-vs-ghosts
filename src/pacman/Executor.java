@@ -27,6 +27,7 @@ import pacman.controllers.examples.StarterGhosts;
 import pacman.controllers.examples.StarterPacMan;
 import pacman.entries.pacman.MyPacMan;
 import pacman.entries.pacman.QLearningPacMan;
+import pacman.entries.pacman.QLearningPacMan2;
 import pacman.game.Game;
 import pacman.game.GameView;
 
@@ -57,19 +58,35 @@ public class Executor {
 		int numTrials = 10000;
 
 		// RESULTAAT PRE GHOSTS: (0.3, 0.9, 0.5) @ 100000 trials, 1926.2458 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 20 minDistanceGhost, 7936,957 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 15 minDistanceGhost, 8633.337 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 10 minDistanceGhost, 9559.578 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 9 minDistanceGhost, 9810.081 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 8 minDistanceGhost, 9963.003 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 7 minDistanceGhost, 10063.210 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 6 minDistanceGhost, 10270.400 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 5 minDistanceGhost, 10394.791 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 4 minDistanceGhost, 2722.890 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 3 minDistanceGhost, 1910.818 points
-		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 2 minDistanceGhost, 1905.355 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 20 minDistanceGhost,
+		// 7936,957 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 15 minDistanceGhost,
+		// 8633.337 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 10 minDistanceGhost,
+		// 9559.578 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 9 minDistanceGhost,
+		// 9810.081 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 8 minDistanceGhost,
+		// 9963.003 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 7 minDistanceGhost,
+		// 10063.210 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 6 minDistanceGhost,
+		// 10270.400 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 5 minDistanceGhost,
+		// 10394.791 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 4 minDistanceGhost,
+		// 2722.890 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 3 minDistanceGhost,
+		// 1910.818 points
+		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 2 minDistanceGhost,
+		// 1905.355 points
+
 		exec.runExperiment(new QLearningPacMan(0.3, 0.9, 0.5, 5),new
 		RandomGhosts(),numTrials);
+		// exec.runExperiment(new QLearningPacMan2(0.3, 0.9, 0.5, 5), new RandomGhosts(), numTrials);
+
+		// RESULTAAT PRO REWARD SYSTEM: (0, 0.6, 0.7) @ 10000 trials & 5
+		// minDistanceGhost, 1942.263 points
 		// exec.runExperiment(new MyPacMan(),new RandomGhosts(),numTrials);
 		// exec.runExperiment(new RandomPacMan(), new RandomGhosts(), numTrials);
 		// exec.runExperiment(new StarterPacMan(), new RandomGhosts(), numTrials);
@@ -78,18 +95,16 @@ public class Executor {
 		// BENCHMARK (0, 0, 0) @ 10000 trails: 932.319 points
 		// RESULTAAT: (0.3, 0.9, 0.5) @ 1000 trials, 1 decimal, 36m: 2064,18 POINTS
 		// RESULTAAT: (0.8, 0.9, 0.8) @ 100 trials, 1 decimal, 3m30s: 2181,10 points
-		// exec.runExperimentQLearning(new QLearningPacMan(), new RandomGhosts(), numTrials);
+		// exec.runExperimentQLearning(new QLearningPacMan(5), new RandomGhosts(),
+		// numTrials);
 
-		// ----------- run a game in synchronous mode: game waits until controllers
-		// respond. -----------
-		int delay = 5;
-		boolean visual = true;
+		// ----------- run a game in synchronous mode: game waits until controllers respond. -----------
+		// int delay = 5;
+		// boolean visual = true;
 
-		// exec.runGame(new QLearningPacMan(0.3, 0.9, 0.5),new
+		// exec.runGame(new QLearningPacMan(0.3, 0.9, 0.5, 5),new
 		// RandomGhosts(),visual,delay);
-		// exec.runGame(new QLearningPacMan(0.0, 0.0, 0.8),new
-		// RandomGhosts(),visual,delay);
-		// exec.runGame(new QLearningPacMan(0.52, 0.95, 0.64),new
+		// exec.runGame(new QLearningPacMan2(0.3, 0.9, 0.5, 5),new
 		// RandomGhosts(),visual,delay);
 		// exec.runGame(new QLearningPacMan(),new RandomGhosts(),visual,delay);
 		// exec.runGame(new MyPacMan(),new RandomGhosts(),visual,delay);
@@ -166,7 +181,7 @@ public class Executor {
 			}
 
 			System.out.println(avgScore / trials);
-			fw.write(avgScore / trials + "");
+			fw.write("AVERAGE:" + avgScore / trials);
 			fw.close();
 		} catch (Exception e) {
 			e.getStackTrace();
@@ -475,8 +490,8 @@ public class Executor {
 
 				input = br.readLine();
 			}
-			
-            br.close();
+
+			br.close();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
