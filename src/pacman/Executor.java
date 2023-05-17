@@ -55,6 +55,7 @@ public class Executor {
 		Executor exec = new Executor();
 
 		// ----------- run multiple games in batch mode - good for testing. -----------
+		QLearningPacMan testPacman = new QLearningPacMan(0.3, 0.9, 0.5, 5);
 		int numTrials = 10000;
 
 		// RESULTAAT PRE GHOSTS: (0.3, 0.9, 0.5) @ 100000 trials, 1926.2458 points
@@ -81,9 +82,10 @@ public class Executor {
 		// RESULTAAT PRO GHOSTS: (0.3, 0.9, 0.5) @ 10000 trials & 2 minDistanceGhost,
 		// 1905.355 points
 
-		exec.runExperiment(new QLearningPacMan(0.3, 0.9, 0.5, 5),new
-		RandomGhosts(),numTrials);
-		// exec.runExperiment(new QLearningPacMan2(0.3, 0.9, 0.5, 5), new RandomGhosts(), numTrials);
+		// exec.runExperiment(testPacman,new
+		// RandomGhosts(),numTrials);
+		// exec.runExperiment(new QLearningPacMan2(0.3, 0.9, 0.5, 5), new
+		// RandomGhosts(), numTrials);
 
 		// RESULTAAT PRO REWARD SYSTEM: (0, 0.6, 0.7) @ 10000 trials & 5
 		// minDistanceGhost, 1942.263 points
@@ -98,12 +100,12 @@ public class Executor {
 		// exec.runExperimentQLearning(new QLearningPacMan(5), new RandomGhosts(),
 		// numTrials);
 
-		// ----------- run a game in synchronous mode: game waits until controllers respond. -----------
-		// int delay = 5;
-		// boolean visual = true;
+		// ----------- run a game in synchronous mode: game waits until controllers
+		// respond. -----------
+		int delay = 5;
+		boolean visual = true;
 
-		// exec.runGame(new QLearningPacMan(0.3, 0.9, 0.5, 5),new
-		// RandomGhosts(),visual,delay);
+		exec.runGame(new QLearningPacMan(0.3, 0.9, 0.5, 5), new RandomGhosts(), visual, delay);
 		// exec.runGame(new QLearningPacMan2(0.3, 0.9, 0.5, 5),new
 		// RandomGhosts(),visual,delay);
 		// exec.runGame(new QLearningPacMan(),new RandomGhosts(),visual,delay);
@@ -114,6 +116,7 @@ public class Executor {
 		// ----------- run the game in asynchronous mode. -----------
 		// boolean visual=true;
 
+		// exec.runGameTimed(testPacman,new RandomGhosts(),visual);
 		// exec.runGameTimed(new QLearningPacMan(),new StarterGhosts(),visual);
 		// exec.runGameTimed(new MyPacMan(),new StarterGhosts(),visual);
 		// exec.runGameTimed(new NearestPillPacMan(),new AggressiveGhosts(),visual);

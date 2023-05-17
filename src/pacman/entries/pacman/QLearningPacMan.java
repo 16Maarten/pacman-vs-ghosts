@@ -61,10 +61,10 @@ public class QLearningPacMan extends Controller<MOVE> {
 		MOVE[] possibleMoves = game.getPossibleMoves(current, game.getPacmanLastMoveMade());
 
 		MOVE selectedMove = MOVE.NEUTRAL;
-		boolean ranFromGhost = false;
+		// boolean ranFromGhost = false;
 
 		// Explore or exploit, when not running from a ghost
-		if (!ranFromGhost) {
+		// if (!ranFromGhost) {
 			if (random.nextDouble() < epsilon) {
 				// Exploration: Choose a random move
 				selectedMove = possibleMoves[random.nextInt(possibleMoves.length)];
@@ -72,7 +72,7 @@ public class QLearningPacMan extends Controller<MOVE> {
 				// Exploitation: Choose the move with the highest Q-value
 				selectedMove = getBestMove(current, possibleMoves);
 			}
-		}
+		// }
 
 		// Execute the selected move in the game
 		Game copy = game.copy();
@@ -91,6 +91,21 @@ public class QLearningPacMan extends Controller<MOVE> {
 		// Q(s, a) = (1 - alpha) * Q(s, a) + alpha * (r + gamma * max Q(s', a'))
 		double newQValue = oldQValue + alpha * (reward + gamma * maxQValue - oldQValue);
 		setQValue(stateAction, newQValue);
+
+		// double highestReward = Double.MIN_VALUE;
+		// MOVE bestMove = MOVE.NEUTRAL;
+
+		// for (MOVE move : possibleMoves) {
+		// 	Game copy2 = game.copy();
+		// 	copy2.updatePacMan(move);
+
+		// 	double newReward = calculateReward(game, copy2);
+		// 	if(newReward > highestReward) {
+		// 		highestReward = newReward;
+		// 		bestMove = move;
+		// 	}
+		// }
+		// return bestMove;
 
 		return selectedMove;
 	}
@@ -113,11 +128,14 @@ public class QLearningPacMan extends Controller<MOVE> {
 							previousState.getGhostCurrentNodeIndex(ghost));
 					int newDistance = newState.getShortestPathDistance(newPosition,
 							newState.getGhostCurrentNodeIndex(ghost));
+							
 					if (newDistance > previousDistance) {
-						ghostReward = 20.0;
+						ghostReward = 200.0;
+						System.out.println("Run away from ghost reward: " + ghostReward);
 						break;
 					} else {
-						ghostReward = -20.0;
+						ghostReward = -200.0;
+						System.out.println("Did not run away from ghost reward: " + ghostReward);
 						break;
 					}
 				}
